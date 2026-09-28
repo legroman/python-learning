@@ -30,3 +30,7 @@ Run the project with `python main.py`.
 | Python | Programming |
 | Git | Version control |
 | VS Code | Code editor |
+
+## Git Practice
+
+This change was made in the `practice-git` branch.
