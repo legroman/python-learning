@@ -6,4 +6,8 @@ profile = {**user, **extra}
 
 print(profile)
 
+<<<<<<< HEAD
 print("Main branch change")
+=======
+print("Feature branch")
+>>>>>>> feature-test
