@@ -36,7 +36,8 @@ def show_menu():
     print("5. Edit task")
     print("6. Filter tasks")
     print("7. Search tasks")
-    print("8. Exit")
+    print("8. Show statistics")
+    print("9. Exit")
 
 
 def show_tasks(tasks):
@@ -128,6 +129,16 @@ def search_tasks(tasks):
     show_tasks(tasks_found)
 
 
+def show_statistics(tasks):
+    total = len(tasks)
+    completed = len([task for task in tasks if task["done"]])
+    active = total - completed
+
+    print(f"Total: {total}")
+    print(f"Completed: {completed}")
+    print(f"Active: {active}")
+
+
 def main():
     tasks = load_tasks()
 
@@ -136,7 +147,7 @@ def main():
 
         choice = input("Choose an option: ")
 
-        if choice == "8":
+        if choice == "9":
             print("Goodbye!")
             break
         elif choice == "1":
@@ -153,6 +164,8 @@ def main():
             filter_tasks(tasks)
         elif choice == "7":
             search_tasks(tasks)
+        elif choice == "8":
+            show_statistics(tasks)
         else:
             print("Invalid option")
 
