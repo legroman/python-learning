@@ -37,7 +37,8 @@ def show_menu():
     print("6. Filter tasks")
     print("7. Search tasks")
     print("8. Show statistics")
-    print("9. Exit")
+    print("9. Sort tasks")
+    print("10. Exit")
 
 
 def show_tasks(tasks):
@@ -139,6 +140,12 @@ def show_statistics(tasks):
     print(f"Active: {active}")
 
 
+def sort_tasks(tasks):
+    tasks.sort(key=lambda task: task["done"])
+    save_tasks(tasks)
+    print("Task sorted.")
+
+
 def main():
     tasks = load_tasks()
 
@@ -147,7 +154,7 @@ def main():
 
         choice = input("Choose an option: ")
 
-        if choice == "9":
+        if choice == "10":
             print("Goodbye!")
             break
         elif choice == "1":
@@ -166,6 +173,8 @@ def main():
             search_tasks(tasks)
         elif choice == "8":
             show_statistics(tasks)
+        elif choice == "9":
+            sort_tasks(tasks)
         else:
             print("Invalid option")
 
