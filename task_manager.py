@@ -131,7 +131,7 @@ def search_tasks(tasks):
 
 def show_statistics(tasks):
     total = len(tasks)
-    completed = len([task for task in tasks if task["done"]])
+    completed = sum(task["done"] for task in tasks)
     active = total - completed
 
     print(f"Total: {total}")
