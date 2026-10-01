@@ -141,9 +141,21 @@ def show_statistics(tasks):
 
 
 def sort_tasks(tasks):
-    tasks.sort(key=lambda task: task["done"])
-    save_tasks(tasks)
-    print("Task sorted.")
+    print("1. By status")
+    print("2. By title")
+
+    choice = input("Choose sort type: ")
+
+    if choice == "1":
+        tasks.sort(key=lambda task: task["done"])
+        save_tasks(tasks)
+        print("Tasks sorted by status.")
+    elif choice == "2":
+        tasks.sort(key=lambda task: task["title"].lower())
+        save_tasks(tasks)
+        print("Tasks sorted by title.")
+    else:
+        print("Invalid option.")
 
 
 def main():
