@@ -160,9 +160,15 @@ def sort_tasks(tasks):
 
 
 def clear_completed(tasks):
-    tasks[:] = [task for task in tasks if not task["done"]]
-    save_tasks(tasks)
-    print("Cleared of completed tasks.")
+    print("Are you sure?")
+    choice = input("Enter yes to confirm: ").strip().lower()
+
+    if choice == "yes":
+        tasks[:] = [task for task in tasks if not task["done"]]
+        save_tasks(tasks)
+        print("Completed tasks cleared.")
+    else:
+        print("Clear cancelled.")
 
 
 def main():
