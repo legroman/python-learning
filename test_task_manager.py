@@ -79,7 +79,19 @@ def test_load_tasks(tmp_path, monkeypatch):
         {"title": "Learn pytest", "done": False},
     ]
 
+
 def test_load_tasks_missing_file(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    tasks = load_tasks()
+
+    assert tasks == []
+
+
+def test_load_tasks_invalid_json(tmp_path, monkeypatch):
+    file_path = tmp_path / "tasks.json"
+    file_path.write_text("not valid json", encoding="utf-8")
+
     monkeypatch.chdir(tmp_path)
 
     tasks = load_tasks()
