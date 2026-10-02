@@ -78,3 +78,10 @@ def test_load_tasks(tmp_path, monkeypatch):
     assert tasks == [
         {"title": "Learn pytest", "done": False},
     ]
+
+def test_load_tasks_missing_file(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    tasks = load_tasks()
+
+    assert tasks == []
