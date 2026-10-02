@@ -1,6 +1,8 @@
 from task_manager import is_valid_task
 from task_manager import clear_completed
 from task_manager import load_tasks
+from task_manager import save_tasks
+import json
 
 
 def test_valid_task():
@@ -112,6 +114,7 @@ def test_load_tasks_not_list(tmp_path, monkeypatch):
 
     assert tasks == []
 
+
 def test_load_tasks_filters_invalid_tasks(tmp_path, monkeypatch):
     file_path = tmp_path / "tasks.json"
     file_path.write_text(
@@ -133,3 +136,22 @@ def test_load_tasks_filters_invalid_tasks(tmp_path, monkeypatch):
     assert tasks == [
         {"title": "Valid task", "done": False},
     ]
+
+
+def test_save_tasks(tmp_path, monkeypatch):
+    tasks = [
+        {"title": "Learn pytest", "done": False},
+        {"title": "Learn Git", "done": True},
+    ]
+
+    monkeypatch.chdir(tmp_path)
+
+    save_tasks(tasks)
+
+    file_path = tmp_path / "tasks.json"
+
+    assert file_path.exists()
+
+    saved_tasks = json.loads(file_path.read_text(encoding="utf-8"))
+
+    assert saved_tasks == tasks
