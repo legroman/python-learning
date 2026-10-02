@@ -1,5 +1,6 @@
 from task_manager import is_valid_task
 from task_manager import clear_completed
+from task_manager import load_tasks
 
 
 def test_valid_task():
@@ -60,4 +61,20 @@ def test_clear_completed_cancelled(monkeypatch):
     assert tasks == [
         {"title": "Task 1", "done": True},
         {"title": "Task 2", "done": False},
+    ]
+
+
+def test_load_tasks(tmp_path, monkeypatch):
+    file_path = tmp_path / "tasks.json"
+    file_path.write_text(
+        '[{"title": "Learn pytest", "done": false}]',
+        encoding="utf-8",
+    )
+
+    monkeypatch.chdir(tmp_path)
+
+    tasks = load_tasks()
+
+    assert tasks == [
+        {"title": "Learn pytest", "done": False},
     ]
