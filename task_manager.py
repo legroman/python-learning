@@ -214,6 +214,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-# get_task_number() тут може бути повернуто як int так і None
