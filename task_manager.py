@@ -1,7 +1,13 @@
 import json
+from typing import TypedDict, TypeGuard
 
 
-def is_valid_task(task):
+class Task(TypedDict):
+    title: str
+    done: bool
+
+
+def is_valid_task(task: object) -> TypeGuard[Task]:
     return (
         isinstance(task, dict)
         and "title" in task
@@ -11,7 +17,7 @@ def is_valid_task(task):
     )
 
 
-def load_tasks():
+def load_tasks() -> list[Task]:
     try:
         with open("tasks.json", "r", encoding="utf-8") as file:
             raw_tasks = json.load(file)
@@ -22,12 +28,12 @@ def load_tasks():
         return []
 
 
-def save_tasks(tasks):
+def save_tasks(tasks: list[Task]) -> None:
     with open("tasks.json", "w", encoding="utf-8") as file:
         json.dump(tasks, file, indent=4, ensure_ascii=False)
 
 
-def show_menu():
+def show_menu() -> None:
     print("\nTask Manager")
     print("1. Add task")
     print("2. Show tasks")
@@ -42,7 +48,7 @@ def show_menu():
     print("11. Exit")
 
 
-def show_tasks(tasks):
+def show_tasks(tasks: list[Task]) -> None:
     if not tasks:
         print("No tasks yet.")
     else:
@@ -51,7 +57,7 @@ def show_tasks(tasks):
             print(f"{index}. [{status}] {task['title']}")
 
 
-def add_task(tasks):
+def add_task(tasks: list[Task]) -> None:
     task = input("Enter task: ").strip()
     if not task:
         print("Task cannot be empty.")
@@ -61,7 +67,7 @@ def add_task(tasks):
         print("Task added!")
 
 
-def get_task_number(tasks):
+def get_task_number(tasks: list[Task]) -> int | None:
     try:
         task_number = int(input("Enter task number: "))
         if 0 < task_number <= len(tasks):
@@ -73,7 +79,7 @@ def get_task_number(tasks):
         return None
 
 
-def toggle_task(tasks):
+def toggle_task(tasks: list[Task]) -> None:
     task_number = get_task_number(tasks)
     if task_number:
         task = tasks[task_number - 1]
@@ -83,7 +89,7 @@ def toggle_task(tasks):
         print(f"Task marked as {status}")
 
 
-def delete_task(tasks):
+def delete_task(tasks: list[Task]) -> None:
     task_number = get_task_number(tasks)
     if task_number:
         removed_task = tasks.pop(task_number - 1)
@@ -91,7 +97,7 @@ def delete_task(tasks):
         print(f"Task [{removed_task['title']}] was deleted")
 
 
-def edit_task(tasks):
+def edit_task(tasks: list[Task]) -> None:
     task_number = get_task_number(tasks)
     if task_number:
         new_task = input("Enter a new task: ").strip()
@@ -103,7 +109,7 @@ def edit_task(tasks):
             print("Task was edited")
 
 
-def filter_tasks(tasks):
+def filter_tasks(tasks: list[Task]) -> None:
     print("1. All")
     print("2. Active")
     print("3. Completed")
@@ -122,7 +128,7 @@ def filter_tasks(tasks):
         print("Invalid option.")
 
 
-def search_tasks(tasks):
+def search_tasks(tasks: list[Task]) -> None:
     search_text = input("Enter search text: ").strip().lower()
     if not search_text:
         print("Search text cannot be empty.")
@@ -131,7 +137,7 @@ def search_tasks(tasks):
     show_tasks(tasks_found)
 
 
-def show_statistics(tasks):
+def show_statistics(tasks: list[Task]) -> None:
     total = len(tasks)
     completed = sum(task["done"] for task in tasks)
     active = total - completed
@@ -141,7 +147,7 @@ def show_statistics(tasks):
     print(f"Active: {active}")
 
 
-def sort_tasks(tasks):
+def sort_tasks(tasks: list[Task]) -> None:
     print("1. By status")
     print("2. By title")
 
@@ -159,7 +165,7 @@ def sort_tasks(tasks):
         print("Invalid option.")
 
 
-def clear_completed(tasks):
+def clear_completed(tasks: list[Task]) -> None:
     print("Are you sure?")
     choice = input("Enter yes to confirm: ").strip().lower()
 
@@ -171,7 +177,7 @@ def clear_completed(tasks):
         print("Clear cancelled.")
 
 
-def main():
+def main() -> None:
     tasks = load_tasks()
 
     while True:
@@ -208,3 +214,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# get_task_number() тут може бути повернуто як int так і None
