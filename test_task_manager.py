@@ -97,3 +97,17 @@ def test_load_tasks_invalid_json(tmp_path, monkeypatch):
     tasks = load_tasks()
 
     assert tasks == []
+
+
+def test_load_tasks_not_list(tmp_path, monkeypatch):
+    file_path = tmp_path / "tasks.json"
+    file_path.write_text(
+        '{"title": "Learn pytest", "done": false}',
+        encoding="utf-8",
+    )
+
+    monkeypatch.chdir(tmp_path)
+
+    tasks = load_tasks()
+
+    assert tasks == []
