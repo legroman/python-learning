@@ -1,7 +1,7 @@
-from models import is_valid_task
-from task_manager import clear_completed
-from task_manager import load_tasks
-from task_manager import save_tasks
+from app.models import is_valid_task
+from app.task_manager import clear_completed
+from app.task_manager import load_tasks
+from app.task_manager import save_tasks
 import json
 import pytest
 

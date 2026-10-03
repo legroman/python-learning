@@ -1,5 +1,5 @@
-from storage import load_tasks, save_tasks
-from models import Task
+from app.storage import load_tasks, save_tasks
+from app.models import Task
 
 def show_menu() -> None:
     print("\nTask Manager")
@@ -178,7 +178,3 @@ def main() -> None:
             clear_completed(tasks)
         else:
             print("Invalid option")
-
-
-if __name__ == "__main__":
-    main()
