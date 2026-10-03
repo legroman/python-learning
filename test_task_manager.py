@@ -1,15 +1,22 @@
-from app.models import is_valid_task
-from app.task_manager import clear_completed
-from app.task_manager import load_tasks
-from app.task_manager import save_tasks
 import json
+
 import pytest
+
+from app.models import is_valid_task
+from app.storage import load_tasks, save_tasks
+from app.task_manager import clear_completed
 
 
 @pytest.fixture
-def temp_dir(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    return tmp_path
+def temp_file_path(tmp_path, monkeypatch):
+    file_path = tmp_path / "tasks.json"
+
+    monkeypatch.setattr(
+        "app.storage.TASKS_FILE",
+        file_path,
+    )
+
+    return file_path
 
 
 def test_valid_task():
@@ -73,9 +80,8 @@ def test_clear_completed_cancelled(monkeypatch):
     ]
 
 
-def test_load_tasks(temp_dir):
-    file_path = temp_dir / "tasks.json"
-    file_path.write_text(
+def test_load_tasks(temp_file_path):
+    temp_file_path.write_text(
         '[{"title": "Learn pytest", "done": false}]',
         encoding="utf-8",
     )
@@ -87,24 +93,22 @@ def test_load_tasks(temp_dir):
     ]
 
 
-def test_load_tasks_missing_file(temp_dir):
+def test_load_tasks_missing_file(temp_file_path):
     tasks = load_tasks()
 
     assert tasks == []
 
 
-def test_load_tasks_invalid_json(temp_dir):
-    file_path = temp_dir / "tasks.json"
-    file_path.write_text("not valid json", encoding="utf-8")
+def test_load_tasks_invalid_json(temp_file_path):
+    temp_file_path.write_text("not valid json", encoding="utf-8")
 
     tasks = load_tasks()
 
     assert tasks == []
 
 
-def test_load_tasks_not_list(temp_dir):
-    file_path = temp_dir / "tasks.json"
-    file_path.write_text(
+def test_load_tasks_not_list(temp_file_path):
+    temp_file_path.write_text(
         '{"title": "Learn pytest", "done": false}',
         encoding="utf-8",
     )
@@ -114,9 +118,8 @@ def test_load_tasks_not_list(temp_dir):
     assert tasks == []
 
 
-def test_load_tasks_filters_invalid_tasks(temp_dir):
-    file_path = temp_dir / "tasks.json"
-    file_path.write_text(
+def test_load_tasks_filters_invalid_tasks(temp_file_path):
+    temp_file_path.write_text(
         """
         [
             {"title": "Valid task", "done": false},
@@ -135,7 +138,7 @@ def test_load_tasks_filters_invalid_tasks(temp_dir):
     ]
 
 
-def test_save_tasks(temp_dir):
+def test_save_tasks(temp_file_path):
     tasks = [
         {"title": "Learn pytest", "done": False},
         {"title": "Learn Git", "done": True},
@@ -143,10 +146,8 @@ def test_save_tasks(temp_dir):
 
     save_tasks(tasks)
 
-    file_path = temp_dir / "tasks.json"
+    assert temp_file_path.exists()
 
-    assert file_path.exists()
-
-    saved_tasks = json.loads(file_path.read_text(encoding="utf-8"))
+    saved_tasks = json.loads(temp_file_path.read_text(encoding="utf-8"))
 
     assert saved_tasks == tasks
