@@ -1,4 +1,4 @@
-from task_manager import is_valid_task
+from models import is_valid_task
 from task_manager import clear_completed
 from task_manager import load_tasks
 from task_manager import save_tasks
