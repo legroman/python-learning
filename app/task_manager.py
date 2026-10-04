@@ -1,6 +1,7 @@
 from app.storage import load_tasks, save_tasks
 from app.models import Task
 
+
 def show_menu() -> None:
     print("\nTask Manager")
     print("1. Add task")
@@ -31,8 +32,11 @@ def add_task(tasks: list[Task]) -> None:
         print("Task cannot be empty.")
     else:
         tasks.append({"title": task, "done": False})
-        save_tasks(tasks)
-        print("Task added!")
+        if save_tasks(tasks):
+            print("Task added!")
+        else:
+            tasks.pop()
+            print("Task was not added")
 
 
 def get_task_number(tasks: list[Task]) -> int | None:
