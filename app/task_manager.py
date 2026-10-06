@@ -1,5 +1,12 @@
-from app.storage import load_tasks, save_tasks
-from app.models import Task
+from app.database import add_task as add_task_to_db
+from app.database import get_all_tasks
+from app.database import get_task_by_id
+from app.database import delete_task as delete_task_from_db
+from app.database import delete_completed_tasks
+from app.database import update_task_title, update_task_status
+from app.database import get_tasks_by_status, get_tasks_by_title
+from app.database import count_all_tasks, count_tasks_by_done
+from app.database import sort_tasks_by_status, sort_tasks_by_title
 
 
 def show_menu() -> None:
@@ -17,71 +24,90 @@ def show_menu() -> None:
     print("11. Exit")
 
 
-def show_tasks(tasks: list[Task]) -> None:
+def show_tasks(_tasks=None) -> None:
+    tasks = get_all_tasks() if _tasks is None else _tasks
+
     if not tasks:
         print("No tasks yet.")
     else:
-        for index, task in enumerate(tasks, start=1):
-            status = "✓" if task["done"] else " "
-            print(f"{index}. [{status}] {task['title']}")
+        for task in tasks:
+            status = "✓" if task[2] else " "
+            print(f"{task[0]}. [{status}] {task[1]}")
 
 
-def add_task(tasks: list[Task]) -> None:
+def add_task() -> None:
     task = input("Enter task: ").strip()
     if not task:
         print("Task cannot be empty.")
     else:
-        tasks.append({"title": task, "done": False})
-        if save_tasks(tasks):
-            print("Task added!")
-        else:
-            tasks.pop()
-            print("Task was not added")
+        add_task_to_db(task)
+        print("Task added!")
 
 
-def get_task_number(tasks: list[Task]) -> int | None:
+
+def toggle_task() -> None:
     try:
-        task_number = int(input("Enter task number: "))
-        if 0 < task_number <= len(tasks):
-            return task_number
-        print("No such task number.")
-        return None
+        task_id = int(input("Enter task id: "))
     except ValueError:
-        print("Invalid task number.")
-        return None
+        print("Invalid task id.")
+        return
+
+    task = get_task_by_id(task_id)
+
+    if task is None:
+        print("No such task.")
+        return
+
+    new_status = 0 if task[2] else 1
+
+    update_task_status(task_id, new_status)
+
+    status = "completed" if new_status else "not completed"
+    print(f"Task marked as {status}")
 
 
-def toggle_task(tasks: list[Task]) -> None:
-    task_number = get_task_number(tasks)
-    if task_number:
-        task = tasks[task_number - 1]
-        task["done"] = not task["done"]
-        save_tasks(tasks)
-        status = "completed" if task["done"] else "not completed"
-        print(f"Task marked as {status}")
+def delete_task() -> None:
+    try:
+        task_id = int(input("Enter task id: "))
+    except ValueError:
+        print("Invalid task id.")
+        return
+
+    task = get_task_by_id(task_id)
+
+    if task is None:
+        print("No such task.")
+        return
+
+    delete_task_from_db(task_id)
+
+    print(f"Task '{task[1]}' was deleted")
 
 
-def delete_task(tasks: list[Task]) -> None:
-    task_number = get_task_number(tasks)
-    if task_number:
-        removed_task = tasks.pop(task_number - 1)
-        save_tasks(tasks)
-        print(f"Task [{removed_task['title']}] was deleted")
+def edit_task() -> None:
+    try:
+        task_id = int(input("Enter task id: "))
+    except ValueError:
+        print("Invalid task id.")
+        return
+
+    task = get_task_by_id(task_id)
+
+    if task is None:
+        print("No such task.")
+        return
+
+    new_task = input("Enter a new task: ").strip()
+
+    if not new_task:
+        print("Task cannot be empty")
+        return
+
+    update_task_title(task_id, new_task)
+    print("Task was edited")
 
 
-def edit_task(tasks: list[Task]) -> None:
-    task_number = get_task_number(tasks)
-    if task_number:
-        new_task = input("Enter a new task: ").strip()
-        if not new_task:
-            print("Task cannot be empty")
-        else:
-            tasks[task_number - 1]["title"] = new_task
-            save_tasks(tasks)
-            print("Task was edited")
-
-
-def filter_tasks(tasks: list[Task]) -> None:
+def filter_tasks() -> None:
     print("1. All")
     print("2. Active")
     print("3. Completed")
@@ -89,29 +115,29 @@ def filter_tasks(tasks: list[Task]) -> None:
     choice = input("Choose an option: ")
 
     if choice == "1":
-        show_tasks(tasks)
+        show_tasks()
     elif choice == "2":
-        active_tasks = [task for task in tasks if not task["done"]]
+        active_tasks = get_tasks_by_status(0)
         show_tasks(active_tasks)
     elif choice == "3":
-        completed_tasks = [task for task in tasks if task["done"]]
+        completed_tasks = get_tasks_by_status(1)
         show_tasks(completed_tasks)
     else:
         print("Invalid option.")
 
 
-def search_tasks(tasks: list[Task]) -> None:
-    search_text = input("Enter search text: ").strip().lower()
+def search_tasks() -> None:
+    search_text = input("Enter search text: ").strip()
     if not search_text:
         print("Search text cannot be empty.")
         return
-    tasks_found = [task for task in tasks if search_text in task["title"].lower()]
+    tasks_found = get_tasks_by_title(search_text)
     show_tasks(tasks_found)
 
 
-def show_statistics(tasks: list[Task]) -> None:
-    total = len(tasks)
-    completed = sum(task["done"] for task in tasks)
+def show_statistics() -> None:
+    total = count_all_tasks()
+    completed = count_tasks_by_done(1)
     active = total - completed
 
     print(f"Total: {total}")
@@ -119,39 +145,34 @@ def show_statistics(tasks: list[Task]) -> None:
     print(f"Active: {active}")
 
 
-def sort_tasks(tasks: list[Task]) -> None:
+def sort_tasks() -> None:
     print("1. By status")
     print("2. By title")
 
     choice = input("Choose sort type: ")
 
     if choice == "1":
-        tasks.sort(key=lambda task: task["done"])
-        save_tasks(tasks)
-        print("Tasks sorted by status.")
+        tasks = sort_tasks_by_status()
+        show_tasks(tasks)
     elif choice == "2":
-        tasks.sort(key=lambda task: task["title"].lower())
-        save_tasks(tasks)
-        print("Tasks sorted by title.")
+        tasks = sort_tasks_by_title()
+        show_tasks(tasks)
     else:
         print("Invalid option.")
 
 
-def clear_completed(tasks: list[Task]) -> None:
+def clear_completed() -> None:
     print("Are you sure?")
     choice = input("Enter yes to confirm: ").strip().lower()
 
     if choice == "yes":
-        tasks[:] = [task for task in tasks if not task["done"]]
-        save_tasks(tasks)
+        delete_completed_tasks()
         print("Completed tasks cleared.")
     else:
         print("Clear cancelled.")
 
 
 def main() -> None:
-    tasks = load_tasks()
-
     while True:
         show_menu()
 
@@ -161,24 +182,24 @@ def main() -> None:
             print("Goodbye!")
             break
         elif choice == "1":
-            add_task(tasks)
+            add_task()
         elif choice == "2":
-            show_tasks(tasks)
+            show_tasks()
         elif choice == "3":
-            toggle_task(tasks)
+            toggle_task()
         elif choice == "4":
-            delete_task(tasks)
+            delete_task()
         elif choice == "5":
-            edit_task(tasks)
+            edit_task()
         elif choice == "6":
-            filter_tasks(tasks)
+            filter_tasks()
         elif choice == "7":
-            search_tasks(tasks)
+            search_tasks()
         elif choice == "8":
-            show_statistics(tasks)
+            show_statistics()
         elif choice == "9":
-            sort_tasks(tasks)
+            sort_tasks()
         elif choice == "10":
-            clear_completed(tasks)
+            clear_completed()
         else:
             print("Invalid option")
