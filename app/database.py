@@ -7,7 +7,9 @@ DB_FILE = BASE_DIR / "tasks.db"
 
 
 def get_connection() -> sqlite3.Connection:
-    return sqlite3.connect(DB_FILE)
+    connection = sqlite3.connect(DB_FILE)
+    connection.execute("PRAGMA foreign_keys = ON")
+    return connection
 
 
 def create_tasks_table() -> None:
@@ -17,20 +19,40 @@ def create_tasks_table() -> None:
             CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY,
                 title TEXT NOT NULL,
-                done INTEGER NOT NULL
+                done INTEGER NOT NULL CHECK (done IN (0, 1)),
+                category_id INTEGER,
+                FOREIGN KEY (category_id)
+                REFERENCES categories(id)
+                ON DELETE SET NULL
+            )
+            """)
+
+        connection.execute("""
+            CREATE INDEX IF NOT EXISTS idx_tasks_category_id
+            ON tasks(category_id)
+            """)
+
+
+def create_categories_table() -> None:
+    with closing(get_connection()) as connection:
+
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE
             )
             """)
 
 
-def add_task(title: str, done: int = 0) -> None:
+def add_task(title: str, done: int = 0, category_id: int | None = None) -> None:
     with closing(get_connection()) as connection:
         with connection:
             connection.execute(
                 """
-                INSERT INTO tasks (title, done)
-                VALUES (?, ?)
+                INSERT INTO tasks (title, done, category_id)
+                VALUES (?, ?, ?)
                 """,
-                (title, done),
+                (title, done, category_id),
             )
 
 
@@ -189,3 +211,86 @@ def get_completed_tasks() -> list[tuple[int, str]]:
         ).fetchall()
 
     return result
+
+
+# ================ Categories ==================
+
+
+def add_category(name: str) -> None:
+    with closing(get_connection()) as connection:
+        with connection:
+            connection.execute(
+                """
+                INSERT INTO categories (name)
+                VALUES (?)
+                """,
+                (name,),
+            )
+
+
+def get_all_categories() -> list[tuple[int, str]]:
+    with closing(get_connection()) as connection:
+        result = connection.execute(
+            """
+            SELECT * FROM categories
+            """,
+        ).fetchall()
+
+    return result
+
+
+def get_tasks_with_categories() -> list[tuple[int, str, int, str | None]]:
+    with closing(get_connection()) as connection:
+        result = connection.execute(
+            """
+            SELECT tasks.id, tasks.title, tasks.done, categories.name 
+            FROM tasks
+            LEFT JOIN categories
+            ON tasks.category_id = categories.id
+            """,
+        ).fetchall()
+
+    return result
+
+
+def delete_category_by_id(category_id: int) -> None:
+    with closing(get_connection()) as connection:
+        with connection:
+            connection.execute(
+                """
+                DELETE FROM categories
+                WHERE id = ?
+                """,
+                (category_id,),
+            )
+
+
+def migrate_tasks_add_category() -> None:
+    with closing(get_connection()) as connection:
+        with connection:
+            connection.execute("""
+                CREATE TABLE tasks_new (
+                    id INTEGER PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    done INTEGER NOT NULL CHECK (done IN (0, 1)),
+                    category_id INTEGER,
+                    FOREIGN KEY (category_id)
+                    REFERENCES categories(id)
+                    ON DELETE SET NULL
+                )
+                """)
+
+            connection.execute("""
+                INSERT INTO tasks_new (id, title, done)
+                SELECT id, title, done
+                FROM tasks
+                """)
+
+            connection.execute("""DROP TABLE tasks""")
+
+            connection.execute("""ALTER TABLE tasks_new RENAME TO tasks""")
+
+            connection.execute("""
+            CREATE INDEX IF NOT EXISTS idx_tasks_category_id
+            ON tasks(category_id)
+            """)

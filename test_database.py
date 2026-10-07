@@ -1,6 +1,7 @@
 import pytest
+import sqlite3
 
-from app.database import create_tasks_table
+from app.database import create_tasks_table, create_categories_table
 from app.database import (
     add_task,
     get_all_tasks,
@@ -15,6 +16,10 @@ from app.database import (
     sort_tasks_by_status,
     sort_tasks_by_title,
     delete_completed_tasks,
+    add_category,
+    get_all_categories,
+    get_tasks_with_categories,
+    delete_category_by_id,
 )
 
 
@@ -27,6 +32,7 @@ def temp_db(tmp_path, monkeypatch):
         db_file,
     )
 
+    create_categories_table()
     create_tasks_table()
 
     return db_file
@@ -37,7 +43,7 @@ def test_add_task(temp_db):
 
     tasks = get_all_tasks()
 
-    assert tasks == [(1, "Learn testing", 0)]
+    assert tasks == [(1, "Learn testing", 0, None)]
 
 
 def test_get_task_by_id(temp_db):
@@ -45,7 +51,7 @@ def test_get_task_by_id(temp_db):
 
     task = get_task_by_id(1)
 
-    assert task == (1, "Learn testing", 0)
+    assert task == (1, "Learn testing", 0, None)
 
 
 def test_get_task_by_invalid_id(temp_db):
@@ -61,7 +67,7 @@ def test_update_task_title(temp_db):
 
     task = get_task_by_id(1)
 
-    assert task == (1, "Learn Python", 0)
+    assert task == (1, "Learn Python", 0, None)
 
 
 def test_update_task_status(temp_db):
@@ -71,7 +77,7 @@ def test_update_task_status(temp_db):
 
     task = get_task_by_id(1)
 
-    assert task == (1, "Learn testing", 1)
+    assert task == (1, "Learn testing", 1, None)
 
 
 def test_delete_task(temp_db):
@@ -90,7 +96,7 @@ def test_get_task_by_status(temp_db):
 
     tasks = get_tasks_by_status(1)
 
-    assert tasks == [(2, "Learn Python", 1)]
+    assert tasks == [(2, "Learn Python", 1, None)]
 
 
 def test_get_task_by_title(temp_db):
@@ -99,7 +105,7 @@ def test_get_task_by_title(temp_db):
 
     tasks = get_tasks_by_title("Python")
 
-    assert tasks == [(2, "Learn Python", 0)]
+    assert tasks == [(2, "Learn Python", 0, None)]
 
 
 def test_count_all_tasks(temp_db):
@@ -130,9 +136,9 @@ def test_sort_tasks_by_title(temp_db):
     tasks = sort_tasks_by_title()
 
     assert tasks == [
-        (3, "Buy milk", 0),
-        (1, "Learn testing", 0),
-        (2, "Walk the dog", 1),
+        (3, "Buy milk", 0, None),
+        (1, "Learn testing", 0, None),
+        (2, "Walk the dog", 1, None),
     ]
 
 
@@ -145,10 +151,10 @@ def test_sort_tasks_by_status(temp_db):
     tasks = sort_tasks_by_status()
 
     assert tasks == [
-        (1, "Learn testing", 0),
-        (3, "Buy milk", 0),
-        (2, "Walk the dog", 1),
-        (4, "Take my brother to school", 1),
+        (1, "Learn testing", 0, None),
+        (3, "Buy milk", 0, None),
+        (2, "Walk the dog", 1, None),
+        (4, "Take my brother to school", 1, None),
     ]
 
 
@@ -163,6 +169,78 @@ def test_delete_completed_tasks(temp_db):
     tasks = get_all_tasks()
 
     assert tasks == [
-        (1, "Learn testing", 0),
-        (3, "Buy milk", 0),
+        (1, "Learn testing", 0, None),
+        (3, "Buy milk", 0, None),
     ]
+
+
+# ================ Categories ==================
+
+
+def test_add_category(temp_db):
+    add_category("Work")
+    add_category("Home")
+
+    categories = get_all_categories()
+
+    assert categories == [
+        (1, "Work"),
+        (2, "Home"),
+    ]
+
+
+def test_add_task_with_category(temp_db):
+    add_category("Work")
+    add_task("Learn SQL", 0, 1)
+    task = get_task_by_id(1)
+
+    assert task == (1, "Learn SQL", 0, 1)
+
+
+def test_get_tasks_with_categories(temp_db):
+    add_category("Work")
+    add_category("Home")
+
+    add_task("Learn testing", 0, 1)
+    add_task("Walk the dog")
+    add_task("Buy milk")
+    add_task("Take my brother to school", 0, 2)
+
+    tasks = get_tasks_with_categories()
+
+    assert tasks == [
+        (1, "Learn testing", 0, "Work"),
+        (2, "Walk the dog", 0, None),
+        (3, "Buy milk", 0, None),
+        (4, "Take my brother to school", 0, "Home"),
+    ]
+
+
+def test_invalid_foreign_key(temp_db):
+    add_category("Work")
+
+    with pytest.raises(sqlite3.IntegrityError):
+        add_task("Learn testing", 0, 2)
+
+
+def test_on_delete_set_null(temp_db):
+    add_category("Work")
+    add_task("Learn testing", 0, 1)
+    delete_category_by_id(1)
+
+    task = get_task_by_id(1)
+
+    assert task == (1, "Learn testing", 0, None)
+
+
+
+def test_unique_category(temp_db):
+    add_category("Work")
+
+    with pytest.raises(sqlite3.IntegrityError):
+        add_category("Work")
+
+
+def test_check_done_in_task(temp_db):
+    with pytest.raises(sqlite3.IntegrityError):
+        add_task("Bad task", 7)

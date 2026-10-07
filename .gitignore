@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 tasks.json
 tasks.db
+tasks_backup_before_categories.db
